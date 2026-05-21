@@ -2,13 +2,13 @@ const items = [
 
     {
         type: "image",
-        file: "images/anime/sample1.jpg",
+        file: "images/anime/Airi Kashii3_8.jpg",
         category: "anime"
     },
 
     {
         type: "image",
-        file: "images/photo/sample2.jpg",
+        file: "images/photo/sample2.png",
         category: "photo"
     },
 

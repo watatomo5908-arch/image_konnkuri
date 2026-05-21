@@ -14,7 +14,7 @@ const items = [
 
     {
         type: "video",
-        file: "images/video/sample3.mp4",
+        file: "images/video/@oreinac (45).mp4",
         category: "video"
     }
 

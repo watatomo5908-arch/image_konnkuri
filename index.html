@@ -1,16 +1,77 @@
-<div class="logo">Image Gallery</div>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
-<div class="subtitle">
-    Personal Collection
-</div>
-<span
-    class="close-modal"
-    id="closeModal"
->
-    ×
-</span>
+    <title>H画像共有サイト</title>
 
-<img
-    class="modal-image"
-    id="modalImage"
-    alt="Preview"
+    <link
+        rel="stylesheet"
+        href="style.css"
+    >
+</head>
+<body>
+
+    <header class="header">
+
+        <h1 class="logo">
+            IMAGE GALLERY
+        </h1>
+
+        <p class="subtitle">
+            GitHub Repository Gallery
+        </p>
+
+    </header>
+
+    <div
+        id="loading"
+        class="loading"
+    >
+        Loading gallery...
+    </div>
+
+    <div
+        id="error"
+        class="error"
+    ></div>
+
+    <div
+        id="filterArea"
+        class="filter-area"
+    ></div>
+
+    <main
+        id="gallery"
+        class="gallery"
+    ></main>
+
+    <div
+        id="modal"
+        class="modal"
+    >
+
+        <span
+            id="closeModal"
+            class="close-modal"
+        >
+            &times;
+        </span>
+
+        <img
+            id="modalImage"
+            class="modal-image"
+            src=""
+            alt=""
+        >
+
+    </div>
+
+    <script src="script.js"></script>
+
+</body>
+</html>

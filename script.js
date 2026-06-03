@@ -1,82 +1,330 @@
-const items = [
-
-    {
-        type: "image",
-        file: "images/anime/Airi Kashii3_8.jpg",
-        category: "anime"
-    },
-
-    {
-        type: "image",
-        file: "images/photo/sample2.png",
-        category: "photo"
-    },
-
-    {
-        type: "video",
-        file: "images/video/@oreinac (45).mp4",
-        category: "video"
-    }
-
-];
+const REPO_OWNER = "watatomo5908-arch";
+const REPO_NAME = "image_konnkuri";
 
 const gallery = document.getElementById("gallery");
-
 const filterArea = document.getElementById("filterArea");
-
 const modal = document.getElementById("modal");
-
 const modalImage = document.getElementById("modalImage");
-
 const closeModal = document.getElementById("closeModal");
+const loading = document.getElementById("loading");
+const errorBox = document.getElementById("error");
 
-const categories = [...new Set(items.map(item => item.category))];
+let allItems = [];
 
-const allButton = document.createElement("button");
+async function getFolderContents(path) {
 
-allButton.className = "filter-btn active";
+const url =
+    `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${path}`;
 
-allButton.dataset.category = "all";
+const response = await fetch(url);
 
-allButton.textContent = "All";
+if (!response.ok) {
 
-filterArea.appendChild(allButton);
+    throw new Error(
+        `Failed to load ${path}`
+    );
 
-categories.forEach(category => {
+}
 
-    const button = document.createElement("button");
+return await response.json();
 
-    button.className = "filter-btn";
+}
 
-    button.dataset.category = category;
+function getFileType(filename) {
 
-    button.textContent = category;
+const ext =
+    filename
+        .split(".")
+        .pop()
+        .toLowerCase();
 
-    filterArea.appendChild(button);
+if (
+    ["mp4", "webm", "mov", "m4v"]
+        .includes(ext)
+) {
 
-});
+    return "video";
 
-items.forEach(item => {
+}
 
-    const card = document.createElement("div");
+return "image";
 
-    card.className = "card";
+}
 
-    card.dataset.category = item.category;
+async function loadGallery() {
 
-    const body = `
-        <div class="card-body">
-            <div class="category">${item.category}</div>
-            <div class="filename">${item.file.split("/").pop()}</div>
+try {
+
+    loading.style.display = "block";
+
+    allItems = [];
+
+    const categories =
+        await getFolderContents("images");
+
+    const directories =
+        categories
+            .filter(
+                item =>
+                    item.type === "dir"
+            )
+            .sort(
+                (a, b) =>
+                    a.name.localeCompare(
+                        b.name,
+                        "ja"
+                    )
+            );
+
+    for (const category of directories) {
+
+        const files =
+            await getFolderContents(
+                `images/${category.name}`
+            );
+
+        files
+            .filter(
+                file =>
+                    file.type === "file"
+            )
+            .forEach(file => {
+
+                allItems.push({
+
+                    type:
+                        getFileType(
+                            file.name
+                        ),
+
+                    file:
+                        file.download_url,
+
+                    filename:
+                        file.name,
+
+                    category:
+                        category.name
+
+                });
+
+            });
+
+    }
+
+    allItems.sort((a, b) => {
+
+        if (
+            a.category !==
+            b.category
+        ) {
+
+            return a.category.localeCompare(
+                b.category,
+                "ja"
+            );
+
+        }
+
+        return a.filename.localeCompare(
+            b.filename,
+            "ja"
+        );
+
+    });
+
+    createFilters();
+
+    renderGallery(allItems);
+
+} catch (error) {
+
+    console.error(error);
+
+    errorBox.textContent =
+        "Gallery loading failed.";
+
+} finally {
+
+    loading.style.display =
+        "none";
+
+}
+
+}
+
+function createFilters() {
+
+filterArea.innerHTML = "";
+
+const allButton =
+    document.createElement(
+        "button"
+    );
+
+allButton.className =
+    "filter-btn active";
+
+allButton.dataset.category =
+    "all";
+
+allButton.textContent =
+    `All (${allItems.length})`;
+
+filterArea.appendChild(
+    allButton
+);
+
+const categories =
+    [...new Set(
+        allItems.map(
+            item =>
+                item.category
+        )
+    )];
+
+categories.forEach(
+    category => {
+
+        const count =
+            allItems.filter(
+                item =>
+                    item.category ===
+                    category
+            ).length;
+
+        const button =
+            document.createElement(
+                "button"
+            );
+
+        button.className =
+            "filter-btn";
+
+        button.dataset.category =
+            category;
+
+        button.textContent =
+            `${category} (${count})`;
+
+        filterArea.appendChild(
+            button
+        );
+
+    }
+);
+
+}
+
+filterArea.addEventListener(
+"click",
+e => {
+
+    if (
+        !e.target.classList.contains(
+            "filter-btn"
+        )
+    ) {
+        return;
+    }
+
+    document
+        .querySelectorAll(
+            ".filter-btn"
+        )
+        .forEach(btn =>
+            btn.classList.remove(
+                "active"
+            )
+        );
+
+    e.target.classList.add(
+        "active"
+    );
+
+    const category =
+        e.target.dataset.category;
+
+    if (
+        category === "all"
+    ) {
+
+        renderGallery(
+            allItems
+        );
+
+        return;
+
+    }
+
+    renderGallery(
+
+        allItems.filter(
+            item =>
+                item.category ===
+                category
+        )
+
+    );
+
+}
+
+);
+
+function renderGallery(items) {
+
+gallery.innerHTML = "";
+
+if (
+    items.length === 0
+) {
+
+    gallery.innerHTML = `
+        <div class="error">
+            No files found.
         </div>
     `;
 
-    if(item.type === "image"){
+    return;
+
+}
+
+items.forEach(item => {
+
+    const card =
+        document.createElement(
+            "div"
+        );
+
+    card.className =
+        "card";
+
+    const filename =
+        decodeURIComponent(
+            item.filename
+        );
+
+    const body = `
+        <div class="card-body">
+            <div class="category">
+                ${item.category}
+            </div>
+            <div class="filename">
+                ${filename}
+            </div>
+        </div>
+    `;
+
+    if (
+        item.type ===
+        "image"
+    ) {
 
         card.innerHTML = `
             <div class="image-wrap">
                 <img
                     src="${item.file}"
+                    alt="${filename}"
                     class="gallery-image"
                     loading="lazy"
                 >
@@ -91,10 +339,12 @@ items.forEach(item => {
                 <video
                     class="gallery-image"
                     controls
-                    muted
+                    preload="metadata"
                     playsinline
                 >
-                    <source src="${item.file}">
+                    <source
+                        src="${item.file}"
+                    >
                 </video>
             </div>
             ${body}
@@ -102,94 +352,94 @@ items.forEach(item => {
 
     }
 
-    gallery.appendChild(card);
+    gallery.appendChild(
+        card
+    );
 
 });
 
-const filterButtons = document.querySelectorAll(".filter-btn");
+bindImageEvents();
 
-const cards = document.querySelectorAll(".card");
+}
 
-filterButtons.forEach(button => {
+function bindImageEvents() {
 
-    button.addEventListener("click", () => {
+document
+    .querySelectorAll(
+        "img.gallery-image"
+    )
+    .forEach(image => {
 
-        filterButtons.forEach(btn => {
-            btn.classList.remove("active");
-        });
+        image.addEventListener(
+            "click",
+            () => {
 
-        button.classList.add("active");
+                modal.classList.add(
+                    "show"
+                );
 
-        const category = button.dataset.category;
+                modalImage.src =
+                    image.src;
 
-        cards.forEach(card => {
-
-            if(category === "all"){
-
-                card.style.display = "block";
-
-            } else {
-
-                if(card.dataset.category === category){
-
-                    card.style.display = "block";
-
-                } else {
-
-                    card.style.display = "none";
-
-                }
+                document.body.style.overflow =
+                    "hidden";
 
             }
-
-        });
-
-    });
-
-});
-
-document.querySelectorAll("img.gallery-image").forEach(image => {
-
-    image.addEventListener("click", () => {
-
-        modal.classList.add("show");
-
-        modalImage.src = image.src;
-
-        document.body.style.overflow = "hidden";
+        );
 
     });
 
-});
+}
 
-closeModal.addEventListener("click", () => {
+function closeModalWindow() {
 
-    modal.classList.remove("show");
+modal.classList.remove(
+    "show"
+);
 
-    document.body.style.overflow = "auto";
+modalImage.src = "";
 
-});
+document.body.style.overflow =
+    "auto";
 
-modal.addEventListener("click", (e) => {
+}
 
-    if(e.target === modal){
+closeModal.addEventListener(
+"click",
+closeModalWindow
+);
 
-        modal.classList.remove("show");
+modal.addEventListener(
+"click",
+e => {
 
-        document.body.style.overflow = "auto";
+    if (
+        e.target === modal
+    ) {
+
+        closeModalWindow();
 
     }
 
-});
+}
 
-document.addEventListener("keydown", (e) => {
+);
 
-    if(e.key === "Escape"){
+document.addEventListener(
+"keydown",
+e => {
 
-        modal.classList.remove("show");
+    if (
+        e.key ===
+        "Escape"
+    ) {
 
-        document.body.style.overflow = "auto";
+        closeModalWindow();
 
     }
 
-});
+}
+
+);
+
+loadGallery();
